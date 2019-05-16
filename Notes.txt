@@ -1,0 +1,135 @@
+
+Lexical scoping : lexical scoping, which describes how a parser resolves variable names when functions are nested. The word "lexical" refers to the fact that lexical scoping uses the location where a variable is declared within the source code to determine where that variable is available. Nested functions have access to variables declared in their outer scope.
+//********************************
+function makeAdder(x) {
+  return function(y) {
+    return x + y;
+  };
+}
+
+var add5 = makeAdder(5);
+var add10 = makeAdder(10);
+
+console.log(add5(2));  // 7
+console.log(add10(2)); // 12
+
+
+closure:  A closure is the combination of a function and the lexical environment within which that function was declared. This environment consists of any local variables that were in-scope at the time the closure was created
+
+
+
+Event loop phases :
+There are six phases in the Event loop but one works internally. Below is an overview of each phase from the Node.js doc.
+
+timers: this phase executes callbacks scheduled by setTimeout() and setInterval().
+I/O callbacks: executes almost all callbacks with the exception of close callbacks, the ones scheduled by timers, and setImmediate().
+idle, prepare: only used internally.
+poll: retrieve new I/O events; node will block here when appropriate.
+check: setImmediate() callbacks are invoked here.close callbacks: such as socket.on(‘close’).
+
+In the check phase, the event loop executes all callbacks in the queue, hence the console output order in our example.
+
+After executing all callbacks in the check queue and no timer threshold has been reached. But there are queued callbacks in the poll phase already from fs.readFile. Event loop executes all callbacks (event loops blocks) until maximum or the queue is empty again. Here is the thing, while executing the callbacks it is possible for timer threshold to elapse. And with new timer callback ready to be executed, the timer will have to wait for poll callbacks to execute, causing extra delays. This is one of the reasons why it is advisable not to do so many things inside your callbacks. After executing the poll queue callbacks, event loop immediately wraps back to the timer to execute the callback.
+
+Note: To prevent the poll phase from starving the event loop, libuv also has a hard maximum (system dependent) before it stops polling for more events.
+
+
+
+
+Hoisting
+Hoisting is the JavaScript interpreter’s action of moving all variable and function declarations to the top of the current scope. However, only the actual declarations are hoisted. Any assignments are left where they are. 
+
+
+
+Unlike other languages that require a new thread or process for every single request, NodeJs takes all requests and then delegates most of the work to other system workers. There’s something called a Libuv library which handles this work effectively with help from the OS kernel. When the background workers are done doing their work, they emit events to NodeJs callbacks registered on that event.
+
+
+V8
+8 runs JavaScript that requires an asynchronous task to be performed
+The libuv library submits a request to the OS to perform the task
+The task is placed onto a queue of tasks that will complete sometime in the future
+The event loop constantly checks to see if any tasks in the queue are complete
+Once the event loop finds a completed task it returns it to continue executing the corresponding JavaScript callback
+
+
+What are exports and imports?
+Imports and exports help us to write modular javascript code. Using Imports and exports we can split our code into multiple files. Imports allow taking only some specific variables or methods of a file. We can import methods or variables that are exported by a module.
+
+
+#########################################################
+######Super query for localisation of advertisement negotiations########
+ #########################################################
+db.tbl_advertisement.aggregate([
+	 {
+	 	$geoNear: {
+	 	   near: { type: "Point", coordinates: [1.01, 1.01] },
+	 	   "maxDistance": 50000,
+	 	   "spherical": true,
+	 	   "distanceField": "loc"
+		   
+	 	}
+	   },
+
+  {
+            
+        $match : {
+     doc_type : "advertisement"
+        }      
+},
+     { 
+                $lookup: 
+                    {
+                    from: "tbl_user",
+                    localField:"userId",
+                    foreignField: "_id",
+                    as: "UserInformation"}
+                },
+                { $unwind: "$UserInformation" },
+                { 
+                $lookup: 
+                    {
+                    from: "tbl_negotiations",
+                    localField:"_id",
+                    foreignField: "advertisement_id",
+                    as: "negotiations"}
+                },
+                { $unwind: "$negotiations" },
+                {  $lookup:
+                            {
+                               from: "tbl_items", 
+                                localField: "_id", 
+        
+                              foreignField: "advertisement_id",
+                                as: "items"
+                            }
+                        },
+                        {   $unwind:"$items" },
+                
+                     { "$group": {
+                            "_id" : {_id:"$_id",_created_at:"$_created_at",orderType:"$orderType",verification_status:"$verification_status",cancel_status:"$cancel_status",order_number:"$order_number",description : "$description" ,no_of_bags : "$no_of_bags",service_type:"$service_type", start_time: "$start_time_2",end_time :"$end_time_2",offering_status:"$offering_status",asking_for_status :"$asking_for_status",total_price : "$total_price",order_date:"$order_date_2"} ,
+                              "UserInformation": { $first: "$UserInformation" },
+                              "negotiations" : { $first: "$negotiations" },
+                                  "items": { "$push": "$items" }
+                                }},
+                     
+        
+                                { $project: 
+                                    { 
+
+                      "UserInformation.name" :1,
+                      "UserInformation.mobile" :1,
+                      "UserInformation.email" :1,
+                      "UserInformation.profile_image" :1,
+                      "UserInformation.rating" :1,
+                      "UserInformation._id" :1,
+                                        "negotiations" : 1,
+                                        "items" : 1
+                                        
+                      
+                      }
+                    }
+  
+          ])
+          
+          
+          
